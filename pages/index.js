@@ -1,6 +1,6 @@
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import appConfig from '../config.json';
 
 function Title({ children, tag }) {
@@ -21,7 +21,16 @@ function Title({ children, tag }) {
 
 export default function PaginaInicial() {
   const [username, setUsername] = useState('jfmacedo91');
+  const [hide, setHide] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    if(username.length < 2) {
+      setHide(true)
+    } else {
+      setHide(false)
+    }
+  }, [username])
 
   return (
     <>
@@ -87,6 +96,7 @@ export default function PaginaInicial() {
                 mainColorLight: appConfig.theme.colors.primary[400],
                 mainColorStrong: appConfig.theme.colors.primary[600],
               }}
+              disabled={hide}
             />
           </Box>
           {/* Formulário */}
@@ -95,7 +105,7 @@ export default function PaginaInicial() {
           {/* Photo Area */}
           <Box
             styleSheet={{
-              display: 'flex',
+              display: hide == true ? 'none' : 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               maxWidth: '200px',
@@ -105,7 +115,7 @@ export default function PaginaInicial() {
               borderColor: appConfig.theme.colors.neutrals[999],
               borderRadius: '10px',
               flex: 1,
-              minHeight: '240px',
+              minHeight: '240px'
             }}
           >
             <Image
