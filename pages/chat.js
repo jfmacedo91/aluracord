@@ -1,15 +1,27 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import appConfig from '../config.json';
 
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
+
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function getRealTimeMessagens(addMessage) {
+	return supabaseClient
+		.from("mensagens")
+		.on("INSERT", (response) => {
+			addMessage(response.new);
+		})
+		.subscribe()
+}
 
 
 export default function ChatPage() {
+	const router = useRouter();
+	const user = router.query.username;
 	const [message, setMessage] = useState('')
 	const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
 
@@ -20,27 +32,32 @@ export default function ChatPage() {
 			.order("id", { ascending: false })
 			.then(({ data }) => {
 				setListaDeMensagens(data)
-			})
-	}, [])
+			});
+	
+		const subscription = getRealTimeMessagens((newMessage) => {
+			setListaDeMensagens((currentValue) => {
+				return [newMessage, ...currentValue]
+			});
+		});
+
+		return () => {
+			subscription.unsubscribe();
+		}
+	}, []);
 	
 	function handleNewMessage(newMessage) {
-		const message = {
-			de: "jfmacedo91",
-			texto: newMessage
-		}
+		const message = { de: user, texto: newMessage }
 
-		supabaseClient.from("mensagens").insert([
-			message
-		]).then(({ data }) => {
-			console.log("Criando mensagem:", data[0].texto);
-			setListaDeMensagens([
-				data[0],
-				...listaDeMensagens
-			])
-		})
+		supabaseClient
+			.from("mensagens")
+			.insert([message])
+			.then(({ data }) => {
+				console.log("Criando mensagem:", data[0].texto);
+			})
 
 		setMessage('');
 	}
+
 	return (
 		<Box
 			styleSheet={{
@@ -110,6 +127,9 @@ export default function ChatPage() {
 								color: appConfig.theme.colors.neutrals[200],
 							}}
 						/>
+						<ButtonSendSticker onStickerClick={ (sticker) => {
+							handleNewMessage(`:sticker:${sticker}`);
+						} }/>
 					</Box>
 				</Box>
 			</Box>
@@ -191,7 +211,11 @@ function MessageList(props) {
 							{(new Date().toLocaleDateString())}
 						</Text>
 					</Box>
-					{mensagem.texto}
+					{ mensagem.texto.startsWith(":sticker:") ? (
+						<Image src={ mensagem.texto.replace(":sticker:", "") } width={ "300px" } />
+					) : (
+						mensagem.texto
+					)}
 				</Text>
 			))}
 		</Box>

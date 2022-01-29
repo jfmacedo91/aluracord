@@ -66,7 +66,7 @@ export default function PaginaInicial() {
             }}
             onSubmit={ (event) => {
               event.preventDefault()
-              router.push("/chat")
+              router.push(`/chat?username=${ username }`)
             }}
           >
             <Title tag="h2">Boas vindas de volta!</Title>
@@ -84,6 +84,7 @@ export default function PaginaInicial() {
                   backgroundColor: appConfig.theme.colors.neutrals[800],
                 },
               }}
+              value={ username }
               onChange={(event) => setUsername(event.target.value)}
             />
             <Button
